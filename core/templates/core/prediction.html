@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}Market Screener - Stock Market Analysis{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="bg-gradient-to-r from-purple-600 to-indigo-700 text-white py-16 mb-12">
+    <div class="container mx-auto px-4 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">Stock Market Analysis</h1>
+        <p class="text-xl md:text-2xl opacity-90 mb-6">
+            Professional analysis tools with performance metrics and technical indicators
+        </p>
+        <div class="flex flex-wrap justify-center gap-4">
+            <button onclick="quickStock('AAPL')" class="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                📱 Apple
+            </button>
+            <button onclick="quickStock('GOOGL')" class="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                🔍 Google
+            </button>
+            <button onclick="quickStock('TSLA')" class="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                🚗 Tesla
+            </button>
+            <button onclick="quickStock('XAUUSD')" class="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                🟡 Gold
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div class="bg-white rounded-xl shadow-lg p-8 mb-12">
+    <div class="text-center mb-6">
+        <h2 class="text-3xl font-bold text-gray-900 mb-2">Search for Market Data</h2>
+        <p class="text-xl text-gray-600">Enter any stock symbol, forex pair, or commodity to get comprehensive market analysis</p>
+    </div>
+    
+    <div class="max-w-md mx-auto">
+        <div class="flex gap-2">
+            <input type="text" 
+                   id="stockSymbol" 
+                   placeholder="Enter symbol (e.g., AAPL, XAUUSD, EUR/USD)" 
+                   class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                   value="AAPL">
+            <button onclick="changeStock()" 
+                    class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors">
+                🔍 Search
+            </button>
+        </div>
+        <p class="text-sm text-gray-500 mt-2 text-center">Popular: 
+            <button onclick="quickStock('AAPL')" class="text-purple-600 hover:text-purple-800 mx-1">AAPL</button> | 
+            <button onclick="quickStock('GOOGL')" class="text-purple-600 hover:text-purple-800 mx-1">GOOGL</button> | 
+            <button onclick="quickStock('MSFT')" class="text-purple-600 hover:text-purple-800 mx-1">MSFT</button> | 
+            <button onclick="quickStock('TSLA')" class="text-purple-600 hover:text-purple-800 mx-1">TSLA</button>
+        </p>
+        <p class="text-sm text-gray-500 mt-1 text-center">Test Assets: 
+            <button onclick="quickStock('XAUUSD')" class="text-yellow-600 hover:text-yellow-800 mx-1">🟡 GOLD</button> | 
+            <button onclick="quickStock('EURUSD')" class="text-blue-600 hover:text-blue-800 mx-1">🔵 EUR/USD</button> | 
+            <button onclick="quickStock('BTCUSD')" class="text-orange-600 hover:text-orange-800 mx-1">🟠 BTC</button>
+        </p>
+    </div>
+</div>
+
+<!-- Market Analysis Dashboard -->
+<div class="space-y-8">
+    <!-- Performance Section -->
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Performance</h2>
+            <span id="performanceTitle" class="text-lg font-semibold text-gray-600">AAPL</span>
+        </div>
+        <div id="performanceContainer" class="min-h-[400px] flex items-center justify-center">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p class="text-gray-600">Loading Performance Data...</p>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Technicals Section -->
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Technicals</h2>
+            <span id="technicalsTitle" class="text-lg font-semibold text-gray-600">AAPL</span>
+        </div>
+        <div id="technicalsContainer" class="min-h-[400px] flex items-center justify-center">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p class="text-gray-600">Loading Technical Analysis...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentSymbol = 'AAPL';
+
+// Initialize all widgets
+function initAllWidgets(symbol) {
+    console.log(`Initializing all widgets for ${symbol}`);
+    currentSymbol = symbol;
+    
+    // Update all titles
+    updateAllTitles(symbol);
+    
+    // Initialize each widget
+    initPerformanceWidget(symbol);
+    initTechnicalsWidget(symbol);
+}
+
+// Update all titles
+function updateAllTitles(symbol) {
+    document.getElementById('performanceTitle').textContent = symbol;
+    document.getElementById('technicalsTitle').textContent = symbol;
+}
+
+// Initialize Performance Widget
+function initPerformanceWidget(symbol) {
+    console.log(`Initializing Performance widget for ${symbol}`);
+    const container = document.getElementById('performanceContainer');
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Create TradingView Performance widget
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+        "symbols": [
+            [
+                symbol
+            ]
+        ],
+        "chartOnly": false,
+        "width": "100%",
+        "height": "400",
+        "locale": "en",
+        "colorTheme": "light",
+        "autosize": true,
+        "showVolume": false,
+        "showMA": false,
+        "hideDateRanges": false,
+        "hideMarketStatus": false,
+        "hideSymbolLogo": false,
+        "scalePosition": "right",
+        "scaleMode": "Normal",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+        "fontSize": "10",
+        "noTimeScale": false,
+        "valuesTracking": "1",
+        "changeMode": "price-and-percent",
+        "chartType": "area",
+        "maLineColor": "#2962FF",
+        "maLineWidth": 1,
+        "maLength": 9
+    });
+    
+    container.appendChild(script);
+}
+
+
+
+// Initialize Technicals Widget
+function initTechnicalsWidget(symbol) {
+    console.log(`Initializing Technicals widget for ${symbol}`);
+    const container = document.getElementById('technicalsContainer');
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Create TradingView Technical Analysis widget
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js';
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+        "interval": "1m",
+        "width": "100%",
+        "isTransparent": false,
+        "height": "400",
+        "symbol": symbol,
+        "showIntervalTabs": true,
+        "locale": "en",
+        "colorTheme": "light"
+    });
+    
+    container.appendChild(script);
+}
+
+// Change stock function
+function changeStock() {
+    const symbol = document.getElementById('stockSymbol').value.toUpperCase().trim();
+    if (symbol) {
+        initAllWidgets(symbol);
+    }
+}
+
+// Quick stock selection
+function quickStock(symbol) {
+    document.getElementById('stockSymbol').value = symbol;
+    initAllWidgets(symbol);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initAllWidgets(currentSymbol);
+});
+
+// Test functions for development
+window.testPredictionPage = function() {
+    console.log('Testing Prediction Page...');
+    initAllWidgets('AAPL');
+};
+
+window.testGold = function() {
+    console.log('Testing Gold (XAUUSD)...');
+    initAllWidgets('XAUUSD');
+};
+
+window.testForex = function() {
+    console.log('Testing Forex (EURUSD)...');
+    initAllWidgets('EURUSD');
+};
+</script>
+{% endblock %}

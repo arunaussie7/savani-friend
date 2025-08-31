@@ -1,0 +1,508 @@
+{% extends 'base.html' %}
+
+{% block title %}Market Screener - Professional Stock Market Analysis{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-16 mb-12">
+    <div class="container mx-auto px-4 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">Professional Stock Market Analysis</h1>
+        <p class="text-xl md:text-2xl opacity-90 mb-6">
+            Access real-time market data, charts, and financial news for informed trading decisions.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4">
+            <button onclick="quickStock('AAPL')" class="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                📱 Apple
+            </button>
+            <button onclick="quickStock('GOOGL')" class="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                🔍 Google
+            </button>
+            <button onclick="quickStock('TSLA')" class="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                🚗 Tesla
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div class="bg-white rounded-xl shadow-lg p-8 mb-12">
+    <div class="text-center mb-6">
+        <h2 class="text-3xl font-bold text-gray-900 mb-2">Search for Market Data</h2>
+        <p class="text-xl text-gray-600">Enter any stock symbol, forex pair, or commodity to get comprehensive TradingView data</p>
+    </div>
+    
+    <div class="max-w-md mx-auto">
+        <div class="flex gap-2">
+            <input type="text" 
+                   id="stockSymbol" 
+                   placeholder="Enter symbol (e.g., AAPL, XAUUSD, EUR/USD)" 
+                   class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                   value="AAPL">
+            <button onclick="changeStock()" 
+                    class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                🔍 Search
+            </button>
+        </div>
+        <p class="text-sm text-gray-500 mt-2 text-center">Popular: 
+            <button onclick="quickStock('AAPL')" class="text-indigo-600 hover:text-indigo-800 mx-1">AAPL</button> | 
+            <button onclick="quickStock('GOOGL')" class="text-indigo-600 hover:text-indigo-800 mx-1">GOOGL</button> | 
+            <button onclick="quickStock('MSFT')" class="text-indigo-600 hover:text-indigo-800 mx-1">MSFT</button> | 
+            <button onclick="quickStock('TSLA')" class="text-indigo-600 hover:text-indigo-800 mx-1">TSLA</button> | 
+            <button onclick="quickStock('AMZN')" class="text-indigo-600 hover:text-indigo-800 mx-1">AMZN</button>
+        </p>
+        <p class="text-sm text-gray-500 mt-1 text-center">Test Assets: 
+            <button onclick="quickStock('XAUUSD')" class="text-yellow-600 hover:text-yellow-800 mx-1">🟡 GOLD</button> | 
+            <button onclick="quickStock('EURUSD')" class="text-blue-600 hover:text-blue-800 mx-1">🔵 EUR/USD</button> | 
+            <button onclick="quickStock('BTCUSD')" class="text-orange-600 hover:text-orange-800 mx-1">🟠 BTC</button>
+        </p>
+    </div>
+    
+    <div class="tradingview-widget-container w-full">
+        <div id="tradingview_widget" class="w-full"></div>
+    </div>
+    
+    <!-- Widget Status Indicator -->
+    <div id="widgetStatus" class="text-center mt-4 text-sm text-gray-600 hidden">
+        <div class="inline-flex items-center">
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
+            <span>Updating all widgets...</span>
+        </div>
+    </div>
+</div>
+
+<!-- Debug Info (temporary) -->
+<div id="debugInfo" class="bg-yellow-100 p-4 mb-4 rounded-lg text-sm">
+    <strong>Debug Info:</strong> 
+    <span id="widgetWidth">Widget width: </span> | 
+    <span id="containerWidth">Container width: </span> | 
+    <span id="gridInfo">Grid layout: </span>
+</div>
+
+<style>
+/* Ensure TradingView widget takes full width */
+.tradingview-widget-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+}
+
+#tradingview_widget {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+}
+
+/* Remove any hidden grid layouts */
+.tradingview-widget-container > div {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Force TradingView to use full width and prevent column splitting */
+.tradingview-widget-container iframe,
+.tradingview-widget-container embed,
+.tradingview-widget-container object {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+}
+
+/* Override any TradingView internal styles that might create columns */
+.tradingview-widget-container * {
+    max-width: 100% !important;
+}
+
+/* Ensure no flexbox or grid creates columns */
+.tradingview-widget-container {
+    display: block !important;
+    flex-direction: unset !important;
+    grid-template-columns: unset !important;
+}
+</style>
+
+<!-- Quick Actions -->
+<div class="mb-12">
+    <div class="bg-gradient-to-br from-green-500 to-blue-600 rounded-xl p-8 text-white max-w-2xl mx-auto">
+        <h3 class="text-2xl font-bold mb-4">View Market Data</h3>
+        <p class="text-green-100 mb-6">
+            Access real-time market data, technical analysis, and financial news all in one dashboard.
+        </p>
+        <a href="{% url 'core:news_sentiment' %}" 
+           class="inline-block bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+            View Market Data →
+        </a>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="bg-white rounded-xl shadow-lg p-8 mb-12">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Platform Statistics</h2>
+    <div class="grid md:grid-cols-4 gap-8 text-center">
+        <div>
+            <div class="text-3xl font-bold text-indigo-600 mb-2">100+</div>
+            <div class="text-gray-600">Assets Analyzed</div>
+        </div>
+        <div>
+            <div class="text-3xl font-bold text-green-600 mb-2">Real-time</div>
+            <div class="text-gray-600">Market Data</div>
+        </div>
+        <div>
+            <div class="text-3xl font-bold text-purple-600 mb-2">24/7</div>
+            <div class="text-gray-600">Updates</div>
+        </div>
+        <div>
+            <div class="text-3xl font-bold text-blue-600 mb-2">Real-time</div>
+            <div class="text-gray-600">Data Updates</div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works -->
+<div class="bg-gray-50 rounded-xl p-8 mb-12">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">How It Works</h2>
+    <div class="grid md:grid-cols-3 gap-8">
+        <div class="text-center">
+            <div class="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-2xl font-bold text-indigo-600">1</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-2">Data Collection</h4>
+            <p class="text-gray-600">Gather real-time market data from TradingView with comprehensive charts and indicators</p>
+        </div>
+        
+        <div class="text-center">
+            <div class="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-2xl font-bold text-indigo-600">2</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-2">Market Analysis</h4>
+            <p class="text-gray-600">Comprehensive market analysis and real-time insights for informed decision making</p>
+        </div>
+        
+        <div class="text-center">
+            <div class="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-2xl font-bold text-indigo-600">3</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-2">Real-time Insights</h4>
+            <p class="text-gray-600">Get live market updates, news, and sentiment analysis all in one dashboard</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentWidget = null;
+
+// Wait for TradingView to be available and initialize widgets
+function waitForTradingViewAndInit(symbol) {
+    if (typeof TradingView !== 'undefined') {
+        console.log('TradingView is available, initializing widgets...');
+        initTradingViewWidget(symbol);
+    } else {
+        console.log('TradingView not available yet, waiting...');
+        setTimeout(() => waitForTradingViewAndInit(symbol), 1000);
+    }
+}
+
+// Initialize TradingView Widget
+function initTradingViewWidget(symbol = 'AAPL') {
+    console.log(`Initializing TradingView widget for ${symbol}`);
+    
+    // Remove existing widget if it exists
+    if (currentWidget) {
+        const container = document.getElementById('tradingview_widget');
+        container.innerHTML = '';
+    }
+    
+    // Create new widget
+    currentWidget = new TradingView.widget({
+        "width": "100%",
+        "height": 500,
+        "symbol": symbol,
+        "interval": "D",
+        "timezone": "Etc/UTC",
+        "theme": "light",
+        "style": "1",
+        "locale": "en",
+        "toolbar_bg": "#f1f3f6",
+        "enable_publishing": false,
+        "hide_top_toolbar": false,
+        "hide_legend": false,
+        "save_image": false,
+        "container_id": "tradingview_widget"
+    });
+    
+    // Force full width after widget creation
+    setTimeout(() => {
+        forceFullWidth();
+        updateDebugInfo();
+    }, 1000);
+    
+    // Widget initialization complete
+    console.log(`TradingView widget initialized for ${symbol}`);
+}
+
+// Force TradingView widget to take full width
+function forceFullWidth() {
+    const container = document.getElementById('tradingview_widget');
+    const widgetContainer = document.querySelector('.tradingview-widget-container');
+    
+    if (container) {
+        container.style.width = '100%';
+        container.style.maxWidth = '100%';
+        container.style.display = 'block';
+        
+        // Find any iframes or embedded content
+        const iframes = container.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            iframe.style.width = '100%';
+            iframe.style.maxWidth = '100%';
+        });
+    }
+    
+    if (widgetContainer) {
+        widgetContainer.style.width = '100%';
+        widgetContainer.style.maxWidth = '100%';
+        widgetContainer.style.display = 'block';
+    }
+    
+    // Remove any grid or flexbox that might create columns
+    const allElements = container ? container.querySelectorAll('*') : [];
+    allElements.forEach(el => {
+        if (el.style.display === 'grid' || el.style.display === 'flex') {
+            el.style.display = 'block';
+        }
+        if (el.style.gridTemplateColumns) {
+            el.style.gridTemplateColumns = '1fr';
+        }
+    });
+}
+
+// Update debug information
+function updateDebugInfo() {
+    const container = document.getElementById('tradingview_widget');
+    const widgetContainer = document.querySelector('.tradingview-widget-container');
+    
+    if (container && widgetContainer) {
+        document.getElementById('widgetWidth').textContent = `Widget width: ${container.offsetWidth}px`;
+        document.getElementById('containerWidth').textContent = `Container width: ${widgetContainer.offsetWidth}px`;
+        
+        // Check for grid layouts
+        const hasGrid = container.querySelector('[style*="grid"]') || container.querySelector('[style*="flex"]');
+        document.getElementById('gridInfo').textContent = `Grid layout: ${hasGrid ? 'Found' : 'None'}`;
+    }
+}
+
+// Enhanced function to fetch comprehensive technical analysis
+function fetchTechnicalAnalysis(symbol) {
+    console.log(`Fetching comprehensive technical analysis for ${symbol}`);
+    
+    // Update the technical analysis widget with enhanced data
+    const container = document.getElementById('technicalAnalysis');
+    
+    // Add a loading state
+    container.innerHTML = `
+        <div class="flex items-center justify-center h-full">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+                <p class="text-gray-500">Loading Technical Analysis for ${symbol}...</p>
+                <p class="text-xs text-gray-400 mt-1">Fetching real-time data from TradingView</p>
+            </div>
+        </div>
+    `;
+    
+    // Initialize the enhanced technical analysis widget
+    setTimeout(() => {
+        initTechnicalAnalysis(symbol);
+    }, 500);
+}
+
+// Clear and initialize technical analysis widget
+function clearAndInitTechnicalAnalysis(symbol) {
+    // Show status indicator
+    const statusIndicator = document.getElementById('widgetStatus');
+    statusIndicator.classList.remove('hidden');
+    
+    // Fetch enhanced technical analysis
+    fetchTechnicalAnalysis(symbol);
+    
+    // Hide status indicator after widget is loaded
+    setTimeout(() => {
+        statusIndicator.classList.add('hidden');
+    }, 3000); // Increased time for enhanced data loading
+}
+
+// Initialize Technical Analysis widget - TradingView Gauge
+function initTechnicalAnalysis(symbol) {
+    console.log(`Initializing Technical Analysis Gauge for ${symbol}`);
+    const container = document.getElementById('technicalAnalysis');
+    container.innerHTML = '';
+    
+    // Create the TradingView Technicals widget (gauge-style) - EXACT MATCH
+    const widgetContainer = document.createElement('div');
+    widgetContainer.className = 'tradingview-widget-container__widget';
+    container.appendChild(widgetContainer);
+    
+    // Create script element for the widget with EXACT configuration
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js';
+    script.async = true;
+    
+    // EXACT widget configuration to match TradingView gauge
+    const widgetConfig = {
+        "interval": "30", // 30 minutes as default
+        "width": "100%",
+        "height": "100%",
+        "isTransparent": false,
+        "symbol": symbol,
+        "showIntervalTabs": true,
+        "locale": "en",
+        "colorTheme": "light",
+        "fontSize": "12",
+        "fontFamily": "Roboto, sans-serif"
+    };
+    
+    // Set the script content with the widget configuration
+    script.innerHTML = JSON.stringify(widgetConfig);
+    container.appendChild(script);
+    
+    console.log(`Technical Analysis Gauge widget created for ${symbol}`);
+    
+    // Add a fallback check to ensure the widget loads
+    setTimeout(() => {
+        if (container.querySelector('.tradingview-widget-container__widget') && 
+            container.querySelector('.tradingview-widget-container__widget').children.length === 0) {
+            console.log('Widget not loading, trying alternative method...');
+            initTechnicalAnalysisAlternative(symbol);
+        }
+    }, 3000);
+}
+
+// Alternative method for technical analysis if the main widget fails
+function initTechnicalAnalysisAlternative(symbol) {
+    console.log(`Using alternative method for Technical Analysis: ${symbol}`);
+    const container = document.getElementById('technicalAnalysis');
+    
+    // Create a simple gauge display as fallback
+    container.innerHTML = `
+        <div class="text-center p-4">
+            <h4 class="font-semibold text-lg mb-3">Technical Analysis: ${symbol}</h4>
+            <div class="bg-gray-100 rounded-lg p-4 mb-3">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-red-600 font-medium">Strong Sell</span>
+                    <span class="text-purple-600 font-medium">Neutral</span>
+                    <span class="text-green-600 font-medium">Strong Buy</span>
+                </div>
+                <div class="w-full bg-gray-300 rounded-full h-4">
+                    <div class="bg-gradient-to-r from-red-500 via-purple-500 to-green-500 h-4 rounded-full w-full"></div>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600">TradingView widget loading...</p>
+            <button onclick="initTechnicalAnalysis('${symbol}')" class="mt-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                Retry Loading
+            </button>
+        </div>
+    `;
+}
+
+// Change stock symbol
+function changeStock() {
+    const symbol = document.getElementById('stockSymbol').value.trim().toUpperCase();
+    if (symbol) {
+        console.log(`Updating technical analysis widget for symbol: ${symbol}`);
+        waitForTradingViewAndInit(symbol);
+    }
+}
+
+// Quick stock selection
+function quickStock(symbol) {
+    document.getElementById('stockSymbol').value = symbol;
+    console.log(`Quick selection: ${symbol}`);
+    waitForTradingViewAndInit(symbol);
+}
+
+// Handle Enter key in search input
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('stockSymbol');
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            changeStock();
+        }
+    });
+    
+    // Initialize with AAPL - wait for TradingView to be available
+    console.log('Page loaded, waiting for TradingView to be available...');
+    waitForTradingViewAndInit('AAPL');
+    
+    // Add a test function to verify widget updates
+    window.testWidgetUpdate = function() {
+        const testSymbols = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'XAUUSD', 'EURUSD'];
+        const randomSymbol = testSymbols[Math.floor(Math.random() * testSymbols.length)];
+        console.log(`Testing widget update with: ${randomSymbol}`);
+        waitForTradingViewAndInit(randomSymbol);
+    };
+    
+    // Add a function to test specific symbols
+    window.testSpecificSymbol = function(symbol) {
+        console.log(`Testing specific symbol: ${symbol}`);
+        waitForTradingViewAndInit(symbol);
+    };
+    
+    // Add a function to test Gold (XAUUSD) specifically
+    window.testGold = function() {
+        console.log('Testing Gold (XAUUSD) technical analysis');
+        waitForTradingViewAndInit('XAUUSD');
+    };
+    
+    // Add a function to test Forex pairs
+    window.testForex = function() {
+        const forexPairs = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCAD'];
+        const randomPair = forexPairs[Math.floor(Math.random() * forexPairs.length)];
+        console.log(`Testing Forex pair: ${randomPair}`);
+        waitForTradingViewAndInit(randomPair);
+    };
+    
+    // Add a function to check widget status
+    window.checkWidgetStatus = function() {
+        const currentSymbol = document.getElementById('stockSymbol').value;
+        
+        console.log('=== Widget Status Check ===');
+        console.log(`Current Symbol: ${currentSymbol}`);
+        console.log(`Main Chart: ${currentWidget ? 'Loaded' : 'Not Loaded'}`);
+        console.log('==========================');
+    };
+    
+    // Add a function to force refresh widgets
+    window.forceRefreshWidgets = function() {
+        const currentSymbol = document.getElementById('stockSymbol').value || 'AAPL';
+        console.log(`Force refreshing technical analysis widget for ${currentSymbol}`);
+        
+        // Clear widget
+        document.getElementById('technicalAnalysis').innerHTML = '<div class="flex items-center justify-center h-full"><div class="text-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div><p class="text-gray-500">Refreshing...</p></div></div>';
+        
+        // Reinitialize
+        setTimeout(() => {
+            waitForTradingViewAndInit(currentSymbol);
+        }, 1000);
+    };
+    
+    // Add a function to test widgets specifically
+    window.testWidgetsOnly = function() {
+        const currentSymbol = document.getElementById('stockSymbol').value || 'XAUUSD';
+        console.log(`Testing technical analysis widget only for ${currentSymbol}`);
+        
+        // Test technical analysis widget
+        initTechnicalAnalysis(currentSymbol);
+    };
+    
+    // Add a function to test Gold specifically
+    window.testGoldWidgets = function() {
+        console.log('Testing Gold (XAUUSD) technical analysis specifically');
+        document.getElementById('stockSymbol').value = 'XAUUSD';
+        
+        // Test technical analysis widget
+        initTechnicalAnalysis('XAUUSD');
+    };
+});
+</script>
+{% endblock %}
